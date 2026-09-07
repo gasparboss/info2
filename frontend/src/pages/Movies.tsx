@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type MovieType from "../types/movie";
 import { getAllMovies } from "../service/movie";
 import Movie from "../components/Movie";
 
 export default function Movies() {
   const [movies, setMovies] = useState<MovieType[]>([]);
+  const [favorites, setFavorites] = useState<MovieType[]>([]);
+  const [searched, setSearched] = useState<string>("");
 
   useEffect(() => {
     (async () => {
@@ -12,23 +14,44 @@ export default function Movies() {
     })();
   }, []);
 
+  const searchableMovies = useMemo(() => {
+    if (!searched) return movies;
+
+    return (
+      movies.filter((item) =>
+        item.title.toLowerCase().includes(searched.toLowerCase().trim()),
+      ) ?? []
+    );
+  }, [movies, searched]);
+
+  const handleFavorites = (item: MovieType) => {
+    if (!favorites.find((movie) => movie.id === item.id)) {
+      setFavorites((prev) => [...prev, item]);
+    }
+  };
+
   return (
     <>
       <header>
         <h1>Filmek listája:</h1>
-        <input type="search" name="" id="" placeholder="Film címe..." />
-        <h3>Kedvenc filmek száma: {0}</h3>
+        <input
+          type="search"
+          value={searched}
+          name=""
+          id=""
+          placeholder="Film címe..."
+          autoFocus
+          onChange={(e) => setSearched(e.target.value)}
+        />
+        <h3>Kedvenc filmek száma: {favorites.length}</h3>
       </header>
       <div className="movies">
-        {movies.length &&
-          movies.map(({ year, genre, description, rating, title }, index) => (
+        {searchableMovies.length &&
+          searchableMovies.map((item, index) => (
             <Movie
               key={index}
-              year={year}
-              genre={genre}
-              description={description}
-              rating={rating}
-              title={title}
+              {...item}
+              onClick={() => handleFavorites(item)}
             />
           ))}
       </div>
